@@ -1,24 +1,28 @@
-// index.js
+// index.js (inside logging-middleware)
 const express = require('express');
+const axios = require('axios');
 const logger = require('./logger');
 
 const app = express();
-const port = 3001;
-
-// Use the custom logger middleware
+app.use(express.json());
 app.use(logger);
 
-// Example endpoint
-app.get('/', (req, res) => {
-  res.send('Logging Middleware Active!');
+app.post('/shorten', async (req, res) => {
+  const { url } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: 'No URL provided' });
+  }
+
+  try {
+    const response = await axios.get(`https://api.shrtco.de/v2/shorten?url=${url}`);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error shortening URL:', error.message);
+    res.status(500).json({ error: 'Failed to shorten URL' });
+  }
 });
 
-// Example endpoint that might be called by frontend
-app.get('/log', (req, res) => {
-  res.send('Logged a GET request from frontend');
-});
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Logging server running at http://localhost:${port}`);
+app.listen(3001, () => {
+  console.log('Logging middleware server running on http://localhost:3001');
 });
